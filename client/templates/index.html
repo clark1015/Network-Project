@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Socket Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+
+        .quick-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-quick {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 8px 16px;
+        }
+
+        .btn-quick:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .response-box {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 500px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-success {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .status-error {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: none;
+            color: #667eea;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading::before {
+            content: '⏳ ';
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 HTTP Socket Client</h1>
+            <p>웹 기반 HTTP 클라이언트</p>
+        </div>
+
+        <div class="content">
+            <!-- 서버 연결 설정 -->
+            <div class="section">
+                <div class="section-title">서버 연결 설정</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="host">Host</label>
+                        <input type="text" id="host" value="localhost">
+                    </div>
+                    <div class="form-group" style="flex: 0 0 150px;">
+                        <label for="port">Port</label>
+                        <input type="number" id="port" value="8080">
+                    </div>
+                </div>
+            </div>
+
+            <!-- HTTP 요청 -->
+            <div class="section">
+                <div class="section-title">HTTP 요청</div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 0 0 150px;">
+                        <label for="method">Method</label>
+                        <select id="method" onchange="toggleBody()">
+                            <option value="GET">GET</option>
+                            <option value="HEAD">HEAD</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="PATCH">PATCH</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="path">Path</label>
+                        <input type="text" id="path" value="/">
+                    </div>
+                </div>
+                <div class="form-group" id="body-group" style="display: none;">
+                    <label for="body">Body (JSON)</label>
+                    <textarea id="body" rows="5">{"name": "Test", "email": "test@example.com"}</textarea>
+                </div>
+            </div>
+
+            <!-- 빠른 테스트 -->
+            <div class="section">
+                <div class="section-title">빠른 테스트</div>
+                <div class="quick-buttons">
+                    <button class="btn btn-quick" onclick="quickTest('GET', '/')">GET /</button>
+                    <button class="btn btn-quick" onclick="quickTest('GET', '/users')">GET /users</button>
+                    <button class="btn btn-quick" onclick="quickTest('POST', '/users')">POST /users</button>
+                    <button class="btn btn-quick" onclick="quickTest('PUT', '/users/1')">PUT /users/1</button>
+                    <button class="btn btn-quick" onclick="quickTest('DELETE', '/users/1')">DELETE /users/1</button>
+                    <button class="btn btn-quick" onclick="quickTest('PATCH', '/users/2')">PATCH /users/2</button>
+                </div>
+            </div>
+
+            <!-- 전송 버튼 -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="sendRequest()" style="flex: 1;">📤 요청 전송</button>
+                <button class="btn btn-secondary" onclick="clearResponse()">🗑️ 응답 지우기</button>
+            </div>
+
+            <!-- 응답 표시 -->
+            <div class="section">
+                <div class="section-title">응답</div>
+                <div class="response-box" id="response">클릭하여 요청을 전송하세요...</div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-text" id="status">준비</div>
+            <div class="loading" id="loading">요청 처리 중...</div>
+        </div>
+    </div>
+
+    <script>
+        function toggleBody() {
+            const method = document.getElementById('method').value;
+            const bodyGroup = document.getElementById('body-group');
+            if (['POST', 'PUT', 'PATCH'].includes(method)) {
+                bodyGroup.style.display = 'block';
+            } else {
+                bodyGroup.style.display = 'none';
+            }
+        }
+
+        function quickTest(method, path) {
+            document.getElementById('method').value = method;
+            document.getElementById('path').value = path;
+            toggleBody();
+            sendRequest();
+        }
+
+        async function sendRequest() {
+            const host = document.getElementById('host').value;
+            const port = document.getElementById('port').value;
+            const method = document.getElementById('method').value;
+            const path = document.getElementById('path').value;
+            const body = document.getElementById('body').value;
+
+            const status = document.getElementById('status');
+            const loading = document.getElementById('loading');
+            const responseBox = document.getElementById('response');
+
+            // 로딩 시작
+            loading.style.display = 'block';
+            status.textContent = `연결 중: ${host}:${port}...`;
+            status.className = 'status-text';
+
+            try {
+                const response = await fetch('/send_request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        host: host,
+                        port: port,
+                        method: method,
+                        path: path,
+                        body: body
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    responseBox.textContent = `=== 요청 ===\n${data.request}\n\n=== 응답 ===\n${data.response}`;
+                    const statusLine = data.response.split('\r\n')[0];
+                    status.textContent = `완료: ${statusLine}`;
+                    status.className = 'status-text status-success';
+                } else {
+                    responseBox.textContent = `에러: ${data.error}`;
+                    status.textContent = `에러: ${data.error}`;
+                    status.className = 'status-text status-error';
+                }
+            } catch (error) {
+                responseBox.textContent = `에러: ${error.message}`;
+                status.textContent = `에러: ${error.message}`;
+                status.className = 'status-text status-error';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function clearResponse() {
+            document.getElementById('response').textContent = '클릭하여 요청을 전송하세요...';
+            document.getElementById('status').textContent = '준비';
+            document.getElementById('status').className = 'status-text';
+        }
+    </script>
+</body>
+
+</html>
